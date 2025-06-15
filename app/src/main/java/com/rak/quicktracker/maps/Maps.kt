@@ -301,8 +301,3 @@ fun VehicleDetailRow(
         Text(text = text, fontSize = 16.sp, color = textColor)
     }
 }
-
-// Ensure your build.gradle has the following dependencies:
-// implementation "com.google.maps.android:maps-compose:2.11.4" // Or latest stable version
-// implementation "com.google.android.gms:play-services-maps:18.2.0" // Or latest stable version
-// implementation "androidx.compose.material:material-icons-extended:1.x.x" // For additional icons if needed
