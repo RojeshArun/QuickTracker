@@ -1,4 +1,3 @@
-// Package declaration for the car registration feature.
 package com.rak.quicktracker.register
 
 import android.widget.Toast
@@ -20,6 +19,28 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import java.util.*
 import kotlin.random.Random
+
+// Imports for the custom top bar functionality
+import androidx.compose.foundation.layout.WindowInsets // Import WindowInsets
+import androidx.compose.foundation.layout.statusBars // Import statusBars
+import androidx.compose.foundation.layout.asPaddingValues // Import asPaddingValues
+import androidx.compose.ui.graphics.RectangleShape // Import RectangleShape
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+
+/**
+ * Helper to convert sp to dp within Composable scope.
+ * This should be a top-level or static function within a Composable scope
+ * to correctly access LocalDensity.current.
+ */
+@Composable
+fun TextUnit.toDp(): Dp {
+    val density = LocalDensity.current // Get density directly here
+    return with(density) {
+        this@toDp.toDp()
+    }
+}
 
 /**
  * [CarScreen] is a Composable function that provides a UI for registering a new vehicle.
@@ -105,167 +126,203 @@ fun CarScreen(
         return listOf(vinError, makeError, modelError, plateError, locationError).all { it == null }
     }
 
-    // Scaffold provides the basic visual structure for Material Design screens.
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = backgroundColor, // Set the background color of the scaffold.
-        topBar = {
-            // Center aligned top app bar for the screen title.
-            CenterAlignedTopAppBar(
-                title = { Text("Register New Vehicle", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = backgroundColor)
+    // Calculate the height of the custom top bar for content positioning
+    // This now correctly calls the top-level toDp() extension function
+    val customTopBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.dp + 16.dp + 18.sp.toDp() // 18.sp is fontSize of custom title
+
+    // The main container box filling the entire screen with a light background.
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor) // Set the main Box background
+    ) {
+        // --- Custom Application Title Header at the very top ---
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+                .background(Color(0xFF007BFF), shape = RectangleShape) // No rounded corners, full width
+                .padding(
+                    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.dp,
+                    bottom = 16.dp // Keep vertical padding for text within the header
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Autonomous Fleet Management System",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             )
-        },
-        content = { padding ->
-            // Column to arrange the input fields and buttons vertically.
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .padding(padding), // Apply padding from the scaffold.
-                verticalArrangement = Arrangement.spacedBy(16.dp) // Spacing between items.
-            ) {
-                // Card to encapsulate the input fields, providing a material design look.
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                    modifier = Modifier.fillMaxWidth()
+        }
+        // --- End Custom Application Title Header ---
+
+        // Scaffold provides the basic visual structure for Material Design screens.
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                // Apply the calculated custom top bar height as top padding to the Scaffold
+                .padding(top = customTopBarHeight), // Offset Scaffold below custom header
+            containerColor = Color.Transparent, // Ensure Scaffold background is transparent so Box background shows
+            topBar = {
+                // Center aligned top app bar for the screen title.
+                CenterAlignedTopAppBar(
+                    title = { Text("Register New Vehicle", fontWeight = FontWeight.Bold) },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent) // Make AppBar background transparent
+                    // We specifically do NOT use `windowInsets` here, as the top-level Box handles status bar.
+                )
+            },
+            content = { padding ->
+                // Column to arrange the input fields and buttons vertically.
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .padding(padding), // Apply padding from the scaffold.
+                    verticalArrangement = Arrangement.spacedBy(16.dp) // Spacing between items.
                 ) {
-                    // Inner column within the card for input fields.
-                    Column(
-                        modifier = Modifier
-                            .background(Color.White)
-                            .padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    // Card to encapsulate the input fields, providing a material design look.
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        // VIN input field.
-                        OutlinedTextField(
-                            value = vin,
-                            onValueChange = { vin = it.uppercase(Locale.getDefault()) }, // Convert to uppercase.
-                            label = { Text("VIN") },
-                            isError = vinError != null, // Show error if vinError is not null.
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                capitalization = KeyboardCapitalization.Characters,
-                                keyboardType = KeyboardType.Ascii
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        // Display VIN error message if present.
-                        vinError?.let {
-                            Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
-                        }
-
-                        // Make input field.
-                        OutlinedTextField(
-                            value = make,
-                            onValueChange = { make = it },
-                            label = { Text("Make") },
-                            isError = makeError != null,
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        // Display Make error message if present.
-                        makeError?.let {
-                            Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
-                        }
-
-                        // Model input field.
-                        OutlinedTextField(
-                            value = model,
-                            onValueChange = { model = it },
-                            label = { Text("Model") },
-                            isError = modelError != null,
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        // Display Model error message if present.
-                        modelError?.let {
-                            Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
-                        }
-
-                        // Plate input field.
-                        OutlinedTextField(
-                            value = plate,
-                            onValueChange = { plate = it.uppercase(Locale.getDefault()) }, // Convert to uppercase.
-                            label = { Text("Plate") },
-                            isError = plateError != null,
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        // Display Plate error message if present.
-                        plateError?.let {
-                            Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
-                        }
-
-                        // Location (Owner) input field.
-                        OutlinedTextField(
-                            value = location,
-                            onValueChange = { location = it },
-                            label = { Text("Location") },
-                            isError = locationError != null,
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        // Display Location error message if present.
-                        locationError?.let {
-                            Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
-                        }
-                    }
-                }
-
-                // Row for action buttons: Register Vehicle and Random Fill.
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp), // Spacing between buttons.
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Register Vehicle button.
-                    Button(
-                        onClick = {
-                            // Validate inputs before proceeding.
-                            if (validate()) {
-                                // Create a Car object with the input data.
-                                val car = Car(vin, make, model, plate, location)
-                                // Invoke the onCarRegistered callback.
-                                onCarRegistered(car)
-                                // Show a success toast message.
-                                Toast.makeText(context, "Vehicle Registered", Toast.LENGTH_SHORT).show()
-                                // Navigate back to the previous screen.
-                                navController.popBackStack()
+                        // Inner column within the card for input fields.
+                        Column(
+                            modifier = Modifier
+                                .background(Color.White)
+                                .padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            // VIN input field.
+                            OutlinedTextField(
+                                value = vin,
+                                onValueChange = { vin = it.uppercase(Locale.getDefault()) }, // Convert to uppercase.
+                                label = { Text("VIN") },
+                                isError = vinError != null, // Show error if vinError is not null.
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Characters,
+                                    keyboardType = KeyboardType.Ascii
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            // Display VIN error message if present.
+                            vinError?.let {
+                                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                             }
-                        },
-                        modifier = Modifier.weight(1f), // Make button fill available width.
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6F42C1)) // Custom color.
-                    ) {
-                        Text("Register Vehicle", color = Color.White)
+
+                            // Make input field.
+                            OutlinedTextField(
+                                value = make,
+                                onValueChange = { make = it },
+                                label = { Text("Make") },
+                                isError = makeError != null,
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            // Display Make error message if present.
+                            makeError?.let {
+                                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                            }
+
+                            // Model input field.
+                            OutlinedTextField(
+                                value = model,
+                                onValueChange = { model = it },
+                                label = { Text("Model") },
+                                isError = modelError != null,
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            // Display Model error message if present.
+                            modelError?.let {
+                                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                            }
+
+                            // Plate input field.
+                            OutlinedTextField(
+                                value = plate,
+                                onValueChange = { plate = it.uppercase(Locale.getDefault()) }, // Convert to uppercase.
+                                label = { Text("Plate") },
+                                isError = plateError != null,
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            // Display Plate error message if present.
+                            plateError?.let {
+                                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                            }
+
+                            // Location (Owner) input field.
+                            OutlinedTextField(
+                                value = location,
+                                onValueChange = { location = it },
+                                label = { Text("Location") },
+                                isError = locationError != null,
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            // Display Location error message if present.
+                            locationError?.let {
+                                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                            }
+                        }
                     }
 
-                    // Random Fill button.
-                    Button(
-                        onClick = {
-                            // Generate random car data.
-                            val randomCar = generateRandomCar()
-                            // Populate input fields with random data.
-                            vin = randomCar.vin
-                            make = randomCar.make
-                            model = randomCar.model
-                            plate = randomCar.plate
-                            location = randomCar.owner
-                        },
-                        modifier = Modifier.weight(1f), // Make button fill available width.
-                        colors = ButtonDefaults.outlinedButtonColors() // Outlined button style.
+                    // Row for action buttons: Register Vehicle and Random Fill.
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp), // Spacing between buttons.
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Random Fill")
+                        // Register Vehicle button.
+                        Button(
+                            onClick = {
+                                // Validate inputs before proceeding.
+                                if (validate()) {
+                                    // Create a Car object with the input data.
+                                    val car = Car(vin, make, model, plate, location)
+                                    // Invoke the onCarRegistered callback.
+                                    onCarRegistered(car)
+                                    // Show a success toast message.
+                                    Toast.makeText(context, "Vehicle Registered", Toast.LENGTH_SHORT).show()
+                                    // Navigate back to the previous screen.
+                                    navController.popBackStack()
+                                }
+                            },
+                            modifier = Modifier.weight(1f), // Make button fill available width.
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6F42C1)) // Custom color.
+                        ) {
+                            Text("Register Vehicle", color = Color.White)
+                        }
+
+                        // Random Fill button.
+                        Button(
+                            onClick = {
+                                // Generate random car data.
+                                val randomCar = generateRandomCar()
+                                // Populate input fields with random data.
+                                vin = randomCar.vin
+                                make = randomCar.make
+                                model = randomCar.model
+                                plate = randomCar.plate
+                                location = randomCar.owner
+                            },
+                            modifier = Modifier.weight(1f), // Make button fill available width.
+                            colors = ButtonDefaults.outlinedButtonColors() // Outlined button style.
+                        ) {
+                            Text("Random Fill")
+                        }
                     }
                 }
             }
-        }
-    )
+        )
+    }
 }
 
 /**

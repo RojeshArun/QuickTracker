@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -20,6 +23,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,13 +32,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.foundation.layout.WindowInsets // Import WindowInsets
-import androidx.compose.foundation.layout.statusBars // Import statusBars
-import androidx.compose.foundation.layout.asPaddingValues // Import asPaddingValues
-import androidx.compose.ui.graphics.RectangleShape // Import RectangleShape
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+
+// Google Maps imports
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapsComposeExperimentalApi
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
+
+// Import VehicleData and readVehiclesFromRaw from the maps package
+import com.rak.quicktracker.maps.VehicleData
+import com.rak.quicktracker.maps.readVehiclesFromRaw
+
 
 /**
  * Author: Mulasa Rojesh Arun kumar
@@ -52,24 +68,32 @@ import androidx.compose.ui.unit.TextUnit
  * within the application.
  * @author Mulasa Rojesh Arun kumar
  */
+@OptIn(MapsComposeExperimentalApi::class) // Add this for GoogleMap composable
 @Composable
 fun HomeScreenUI(navController: NavController) {
+    val context = LocalContext.current
+    val vehicles = remember { readVehiclesFromRaw(context) }
+
+    // Camera position for the world map view - changed zoom to 0f for whole world
+    val worldCameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(LatLng(0.0, 0.0), 0f) // Zoom set to 0f
+    }
+
     // The main container box filling the entire screen with a light background.
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF4F6F8))
     ) {
-        // --- Application Title Header at the very top (similar to MapScreen) ---
+        // --- Application Title Header at the very top ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.TopCenter) // Align the header to the top
-                .background(Color(0xFF007BFF), shape = RectangleShape) // No rounded corners, full width
-                // Add padding based on status bar height and then some extra vertical padding
+                .align(Alignment.TopCenter)
+                .background(Color(0xFF007BFF), shape = RectangleShape)
                 .padding(
                     top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.dp,
-                    bottom = 16.dp // Keep vertical padding for text within the header
+                    bottom = 16.dp
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -83,107 +107,137 @@ fun HomeScreenUI(navController: NavController) {
         // --- End Application Title Header ---
 
         // Calculate the height of the custom top bar for content positioning
-        val customTopBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.dp + 16.dp + 24.sp.toDp() // Approx text height 24.sp to Dp
+        val customTopBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.dp + 16.dp + 24.sp.toDp()
 
-        // Column to arrange major UI elements vertically, centered horizontally.
-        // This is your original main content column, now positioned below the custom header.
+        // Column to arrange major UI elements vertically
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    top = customTopBarHeight + 16.dp, // Add extra padding below the header and the original 16.dp
+                    top = customTopBarHeight + 16.dp, // Space below the top header
                     start = 16.dp,
                     end = 16.dp,
                     bottom = 16.dp
-                ) // Apply padding around the entire content column
-            // Removed .align(Alignment.Center) because we're explicitly setting top padding
-            , horizontalAlignment = Alignment.CenterHorizontally
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // Header Card: "View Real-Time Fleet Map"
-            // This card acts as a prominent button to navigate to the map screen.
+            // Header Card: "View Real-Time Fleet Map" - Reduced height and font size
             Card(
-                shape = RoundedCornerShape(12.dp), // Rounded corners for a modern look
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), // Shadow for depth
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp) // Vertical spacing from other elements
-                    .clickable { navController.navigate("map") } // Navigate to "map" route on click
+                    .padding(vertical = 8.dp)
+                    .clickable { navController.navigate("map") }
             ) {
-                // Inner Box for the button's background color and content alignment
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFF007BFF)) // Blue background color
+                        .background(Color(0xFF007BFF))
                         .fillMaxWidth()
-                        .padding(20.dp), // Internal padding for the text
-                    contentAlignment = Alignment.Center // Center the text within the box
+                        .padding(vertical = 16.dp), // Reduced vertical padding
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "View Real-Time Fleet Map",
-                        fontSize = 18.sp,
+                        fontSize = 16.sp, // Reduced font size
                         fontWeight = FontWeight.Bold,
-                        color = Color.White // White text color
+                        color = Color.White
                     )
                 }
             }
 
-            // Fleet Summary Card
-            // Displays an overview of fleet statistics like total vehicles, average speed, etc.
+            Spacer(modifier = Modifier.height(16.dp)) // Space between button and map
+
+            // --- Embedded Google Map --- Increased height and enabled gestures
             Card(
-                shape = RoundedCornerShape(12.dp), // Rounded corners for the card
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), // Shadow for depth
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 12.dp) // Horizontal and vertical spacing
+                    .height(280.dp) // Increased height
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
-                // Column for the card's internal content, including title and grid layout
+                Box(modifier = Modifier.fillMaxSize()) {
+                    GoogleMap(
+                        modifier = Modifier.fillMaxSize(),
+                        cameraPositionState = worldCameraPositionState,
+                        uiSettings = com.google.maps.android.compose.MapUiSettings(
+                            zoomControlsEnabled = true, // Enabled zoom controls
+                            scrollGesturesEnabled = true, // Enabled scrolling/panning
+                            zoomGesturesEnabled = true, // Enabled pinch-to-zoom
+                            rotationGesturesEnabled = false,
+                            tiltGesturesEnabled = false,
+                            mapToolbarEnabled = false
+                        )
+                    ) {
+                        vehicles.forEach { vehicle ->
+                            Marker(
+                                state = MarkerState(
+                                    position = LatLng(
+                                        vehicle.latitude,
+                                        vehicle.longitude
+                                    )
+                                ),
+                                title = vehicle.name,
+                                snippet = "${vehicle.make} ${vehicle.model}",
+                                onClick = { _ -> false }
+                            )
+                        }
+                    }
+                }
+            }
+            // --- End Embedded Google Map ---
+
+            Spacer(modifier = Modifier.height(16.dp)) // Space between map and "My Fleet" card
+
+            // Fleet Summary Card
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+            ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Title for the Fleet Summary section
                     Text(
                         text = "My Fleet",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF333333), // Dark gray text color
-                        modifier = Modifier.padding(bottom = 12.dp) // Spacing below the title
+                        color = Color(0xFF333333),
+                        modifier = Modifier.padding(bottom = 12.dp)
                     )
 
-                    // Table-like Grid Layout: Arranges fleet information in two rows and two columns.
                     Column {
-                        // First row of fleet information cells
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            // Total Vehicles cell
                             FleetInfoCell(
-                                iconRes = android.R.drawable.ic_menu_myplaces, // Android built-in icon
+                                iconRes = android.R.drawable.ic_menu_myplaces,
                                 label = "Total: 5",
-                                tint = Color(0xFF007BFF), // Blue tint for the icon
-                                modifier = Modifier.weight(1f) // Distributes space equally
+                                tint = Color(0xFF007BFF),
+                                modifier = Modifier.weight(1f)
                             )
-                            // Average Speed cell
                             FleetInfoCell(
-                                iconRes = android.R.drawable.ic_menu_compass, // Android built-in icon
+                                iconRes = android.R.drawable.ic_menu_compass,
                                 label = "Avg Speed: 22.5",
-                                tint = Color(0xFF17A2B8), // Teal tint for the icon
-                                modifier = Modifier.weight(1f) // Distributes space equally
+                                tint = Color(0xFF17A2B8),
+                                modifier = Modifier.weight(1f)
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp)) // Vertical space between rows
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                        // Second row of fleet information cells
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            // Battery status cell
                             FleetInfoCell(
-                                iconRes = android.R.drawable.ic_lock_idle_charging, // Android built-in icon
+                                iconRes = android.R.drawable.ic_lock_idle_charging,
                                 label = "Battery: 76%",
-                                tint = Color(0xFF28A745), // Green tint for the icon
-                                modifier = Modifier.weight(1f) // Distributes space equally
+                                tint = Color(0xFF28A745),
+                                modifier = Modifier.weight(1f)
                             )
-                            // Alerts count cell
                             FleetInfoCell(
-                                iconRes = android.R.drawable.ic_dialog_alert, // Android built-in icon
+                                iconRes = android.R.drawable.ic_dialog_alert,
                                 label = "Alerts: 0",
-                                tint = Color(0xFFDC3545), // Red tint for the icon
-                                modifier = Modifier.weight(1f) // Distributes space equally
+                                tint = Color(0xFFDC3545),
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
@@ -191,55 +245,50 @@ fun HomeScreenUI(navController: NavController) {
             }
 
             // Control Buttons Row: Start, Stop, Optimize
-            // Provides actions to control the fleet.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp), // Spacing around the row
-                horizontalArrangement = Arrangement.SpaceBetween // Distribute buttons evenly with space between them
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Start Button
                 Button(
-                    onClick = { navController.navigate("map") }, // Navigate to map on Start click
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF28A745)), // Green background
+                    onClick = { navController.navigate("map") },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF28A745)),
                     modifier = Modifier
-                        .weight(1f) // Equal weight for button width
-                        .padding(end = 6.dp) // Spacing between buttons
+                        .weight(1f)
+                        .padding(end = 6.dp)
                 ) {
-                    Text("Start", color = Color.White) // White text
+                    Text("Start", color = Color.White)
                 }
 
-                // Stop Button
                 Button(
-                    onClick = { /* TODO: Implement Stop functionality */ }, // Placeholder for Stop action
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545)), // Red background
+                    onClick = { /* TODO: Implement Stop functionality */ },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545)),
                     modifier = Modifier
-                        .weight(1f) // Equal weight for button width
-                        .padding(end = 6.dp) // Spacing between buttons
+                        .weight(1f)
+                        .padding(end = 6.dp)
                 ) {
-                    Text("Stop", color = Color.White) // White text
+                    Text("Stop", color = Color.White)
                 }
 
-                // Optimize Button
                 Button(
-                    onClick = { /* TODO: Implement Optimize functionality */ }, // Placeholder for Optimize action
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107)), // Yellow background
-                    modifier = Modifier.weight(1f) // Equal weight for button width
+                    onClick = { /* TODO: Implement Optimize functionality */ },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107)),
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Text("Optimize", color = Color.Black) // Black text
+                    Text("Optimize", color = Color.Black)
                 }
             }
 
             // Register New Car Button
-            // Button to navigate to the car registration screen.
             Button(
-                onClick = { navController.navigate("car_screen") }, // Navigate to "car_screen" route on click
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6F42C1)), // Purple background
+                onClick = { navController.navigate("car_screen") },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6F42C1)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp) // Spacing around the button
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
-                Text("Add a Vehicle", color = Color.White) // White text
+                Text("Add a Vehicle", color = Color.White)
             }
         }
     }
@@ -248,40 +297,33 @@ fun HomeScreenUI(navController: NavController) {
 /**
  * Composable function to display a single information cell within the fleet summary grid.
  * It combines an icon and a label.
- *
- * @param iconRes The resource ID of the icon to display (e.g., `android.R.drawable.ic_menu_myplaces`).
- * @param label The text label to display alongside the icon (e.g., "Total: 5").
- * @param tint The color to apply to the icon.
- * @param modifier The [Modifier] to be applied to this composable, allowing for custom layout
- * and padding.
- * @author Mulasa Rojesh Arun kumar
  */
 @Composable
 fun FleetInfoCell(iconRes: Int, label: String, tint: Color, modifier: Modifier = Modifier) {
-    // Row to arrange the icon and text horizontally
     Row(
-        verticalAlignment = Alignment.CenterVertically, // Align items vertically in the center
-        modifier = modifier.padding(8.dp) // Padding around the cell content
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.padding(8.dp)
     ) {
-        // Icon element
         Icon(
-            painter = painterResource(id = iconRes), // Load icon from resource ID
-            contentDescription = label, // Content description for accessibility
-            tint = tint, // Apply specified tint color
+            painter = painterResource(id = iconRes),
+            contentDescription = label,
+            tint = tint,
             modifier = Modifier
-                .size(28.dp) // Set icon size
-                .padding(end = 8.dp) // Spacing between icon and text
+                .size(28.dp)
+                .padding(end = 8.dp)
         )
-        // Text label
         Text(
             text = label,
             fontSize = 14.sp,
-            color = Color.DarkGray // Dark gray text color
+            color = Color.DarkGray
         )
     }
 }
 
-
+/**
+ * Extension function to convert a [TextUnit] (like `sp`) to [Dp] (density-independent pixels).
+ * This is useful for accurately calculating dimensions based on text size.
+ */
 @Composable
 fun TextUnit.toDp(): Dp {
     val density = LocalDensity.current
