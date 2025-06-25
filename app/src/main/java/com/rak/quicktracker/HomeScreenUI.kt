@@ -28,6 +28,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.foundation.layout.WindowInsets // Import WindowInsets
+import androidx.compose.foundation.layout.statusBars // Import statusBars
+import androidx.compose.foundation.layout.asPaddingValues // Import asPaddingValues
+
 
 /**
  * Author: Mulasa Rojesh Arun kumar
@@ -48,18 +52,49 @@ import androidx.navigation.NavController
 @Composable
 fun HomeScreenUI(navController: NavController) {
     // The main container box filling the entire screen with a light background.
-    // Content is centered horizontally and vertically within this box.
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF4F6F8)),
-        contentAlignment = Alignment.Center
+            .background(Color(0xFFF4F6F8))
     ) {
-        // Column to arrange major UI elements vertically, centered horizontally.
+        // Application Title Header at the very top
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp), // Apply padding around the entire content column
+                .align(Alignment.TopCenter) // Align the header to the top
+                // Add padding based on status bar height and then some extra margin
+                .padding(
+                    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.dp,
+                    start = 16.dp,
+                    end = 16.dp
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF007BFF), shape = RoundedCornerShape(12.dp))
+                    .padding(vertical = 16.dp), // Adjust vertical padding for the title
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Autonomous Fleet Management System",
+                    fontSize = 18.sp, // Slightly smaller font size
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp)) // Space between header and main content
+        }
+
+
+        // Column to arrange major UI elements vertically, centered horizontally.
+        // This is your original main content column, now vertically centered.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp) // Apply padding around the entire content column
+                .align(Alignment.Center), // Keep the main content centered
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
