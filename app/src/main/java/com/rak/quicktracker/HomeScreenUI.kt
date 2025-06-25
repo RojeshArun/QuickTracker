@@ -31,7 +31,10 @@ import androidx.navigation.NavController
 import androidx.compose.foundation.layout.WindowInsets // Import WindowInsets
 import androidx.compose.foundation.layout.statusBars // Import statusBars
 import androidx.compose.foundation.layout.asPaddingValues // Import asPaddingValues
-
+import androidx.compose.ui.graphics.RectangleShape // Import RectangleShape
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 
 /**
  * Author: Mulasa Rojesh Arun kumar
@@ -57,45 +60,44 @@ fun HomeScreenUI(navController: NavController) {
             .fillMaxSize()
             .background(Color(0xFFF4F6F8))
     ) {
-        // Application Title Header at the very top
-        Column(
+        // --- Application Title Header at the very top (similar to MapScreen) ---
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter) // Align the header to the top
-                // Add padding based on status bar height and then some extra margin
+                .background(Color(0xFF007BFF), shape = RectangleShape) // No rounded corners, full width
+                // Add padding based on status bar height and then some extra vertical padding
                 .padding(
                     top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.dp,
-                    start = 16.dp,
-                    end = 16.dp
+                    bottom = 16.dp // Keep vertical padding for text within the header
                 ),
-            horizontalAlignment = Alignment.CenterHorizontally
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF007BFF), shape = RoundedCornerShape(12.dp))
-                    .padding(vertical = 16.dp), // Adjust vertical padding for the title
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Autonomous Fleet Management System",
-                    fontSize = 18.sp, // Slightly smaller font size
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp)) // Space between header and main content
+            Text(
+                text = "Autonomous Fleet Management System",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
         }
+        // --- End Application Title Header ---
 
+        // Calculate the height of the custom top bar for content positioning
+        val customTopBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.dp + 16.dp + 24.sp.toDp() // Approx text height 24.sp to Dp
 
         // Column to arrange major UI elements vertically, centered horizontally.
-        // This is your original main content column, now vertically centered.
+        // This is your original main content column, now positioned below the custom header.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp) // Apply padding around the entire content column
-                .align(Alignment.Center), // Keep the main content centered
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(
+                    top = customTopBarHeight + 16.dp, // Add extra padding below the header and the original 16.dp
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp
+                ) // Apply padding around the entire content column
+            // Removed .align(Alignment.Center) because we're explicitly setting top padding
+            , horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
             // Header Card: "View Real-Time Fleet Map"
@@ -276,5 +278,14 @@ fun FleetInfoCell(iconRes: Int, label: String, tint: Color, modifier: Modifier =
             fontSize = 14.sp,
             color = Color.DarkGray // Dark gray text color
         )
+    }
+}
+
+
+@Composable
+fun TextUnit.toDp(): Dp {
+    val density = LocalDensity.current
+    return with(density) {
+        this@toDp.toDp()
     }
 }
