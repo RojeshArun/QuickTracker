@@ -44,7 +44,7 @@ fun TextUnit.toDp(): Dp {
 
 /**
  * [CarScreen] is a Composable function that provides a UI for registering a new vehicle.
- * It includes input fields for VIN, Make, Model, Plate, and Location, along with validation.
+ * It includes input fields for VIN, Make, Model, Plate, Location, and Name, along with validation.
  *
  * @param navController The [NavController] used for navigating back to the previous screen.
  * @param onCarRegistered A callback function invoked when a car is successfully registered,
@@ -81,6 +81,11 @@ fun CarScreen(
     var location by remember { mutableStateOf("") }
     var locationError by remember { mutableStateOf<String?>(null) }
 
+    // State variables for Name input field and its error message.
+    var name by remember { mutableStateOf("") } // New state variable for Name
+    var nameError by remember { mutableStateOf<String?>(null) } // New error state for Name
+
+
     // Define a background color, matching the home screen's background.
     val backgroundColor = Color(0xFFF4F6F8) // Match HomeScreen bg
 
@@ -114,6 +119,7 @@ fun CarScreen(
             plate.isBlank() -> "Plate is required"
             !plate.matches(Regex("^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}\$")) &&
                     !plate.matches(Regex("^[A-Z]{3}-[0-9]{4}\$")) -> "Plate format invalid"
+
             else -> null
         }
         // Validate Location: must not be blank and match the specified regex.
@@ -122,13 +128,27 @@ fun CarScreen(
             !location.matches(Regex("^[A-Za-z ]{2,50}\$")) -> "Location invalid"
             else -> null
         }
+        // Validate Name: must not be blank and contain only alphabetic characters and spaces.
+        nameError = when {
+            name.isBlank() -> "Name is required"
+            !name.matches(Regex("^[A-Za-z ]{2,50}\$")) -> "Name invalid (only alphabets and spaces)"
+            else -> null
+        }
         // Return true if all error messages are null (i.e., no errors).
-        return listOf(vinError, makeError, modelError, plateError, locationError).all { it == null }
+        return listOf(
+            vinError,
+            makeError,
+            modelError,
+            plateError,
+            locationError,
+            nameError
+        ).all { it == null }
     }
 
     // Calculate the height of the custom top bar for content positioning
     // This now correctly calls the top-level toDp() extension function
-    val customTopBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.dp + 16.dp + 18.sp.toDp() // 18.sp is fontSize of custom title
+    val customTopBarHeight = WindowInsets.statusBars.asPaddingValues()
+        .calculateTopPadding() + 16.dp + 16.dp + 18.sp.toDp() // 18.sp is fontSize of custom title
 
     // The main container box filling the entire screen with a light background.
     Box(
@@ -141,7 +161,10 @@ fun CarScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
-                .background(Color(0xFF007BFF), shape = RectangleShape) // No rounded corners, full width
+                .background(
+                    Color(0xFF007BFF),
+                    shape = RectangleShape
+                ) // No rounded corners, full width
                 .padding(
                     top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.dp,
                     bottom = 16.dp // Keep vertical padding for text within the header
@@ -194,10 +217,27 @@ fun CarScreen(
                                 .padding(20.dp),
                             verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
+
+                            // NEW: Name input field
+                            OutlinedTextField(
+                                value = name,
+                                onValueChange = { name = it },
+                                label = { Text("Name") },
+                                isError = nameError != null,
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            // Display Name error message if present.
+                            nameError?.let {
+                                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                            }
                             // VIN input field.
                             OutlinedTextField(
                                 value = vin,
-                                onValueChange = { vin = it.uppercase(Locale.getDefault()) }, // Convert to uppercase.
+                                onValueChange = {
+                                    vin = it.uppercase(Locale.getDefault())
+                                }, // Convert to uppercase.
                                 label = { Text("VIN") },
                                 isError = vinError != null, // Show error if vinError is not null.
                                 singleLine = true,
@@ -245,7 +285,9 @@ fun CarScreen(
                             // Plate input field.
                             OutlinedTextField(
                                 value = plate,
-                                onValueChange = { plate = it.uppercase(Locale.getDefault()) }, // Convert to uppercase.
+                                onValueChange = {
+                                    plate = it.uppercase(Locale.getDefault())
+                                }, // Convert to uppercase.
                                 label = { Text("Plate") },
                                 isError = plateError != null,
                                 singleLine = true,
@@ -271,6 +313,8 @@ fun CarScreen(
                             locationError?.let {
                                 Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                             }
+
+
                         }
                     }
 
@@ -285,12 +329,16 @@ fun CarScreen(
                             onClick = {
                                 // Validate inputs before proceeding.
                                 if (validate()) {
-                                    // Create a Car object with the input data.
-                                    val car = Car(vin, make, model, plate, location)
+                                    // Create a Car object with the input data, including the new name field.
+                                    val car = Car(vin, make, model, plate, location, name)
                                     // Invoke the onCarRegistered callback.
                                     onCarRegistered(car)
                                     // Show a success toast message.
-                                    Toast.makeText(context, "Vehicle Registered", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Vehicle Registered",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                     // Navigate back to the previous screen.
                                     navController.popBackStack()
                                 }
@@ -306,17 +354,18 @@ fun CarScreen(
                             onClick = {
                                 // Generate random car data.
                                 val randomCar = generateRandomCar()
-                                // Populate input fields with random data.
+                                // Populate input fields with random data, including the new name field.
                                 vin = randomCar.vin
                                 make = randomCar.make
                                 model = randomCar.model
                                 plate = randomCar.plate
                                 location = randomCar.owner
+                                name = randomCar.name // Populate the new name field
                             },
                             modifier = Modifier.weight(1f), // Make button fill available width.
                             colors = ButtonDefaults.outlinedButtonColors() // Outlined button style.
                         ) {
-                            Text("Random Fill")
+                            // Text("Random Fill")
                         }
                     }
                 }
@@ -327,11 +376,11 @@ fun CarScreen(
 
 /**
  * Generates a [Car] object with random data for demonstration or testing purposes.
- * @return A [Car] object with randomly generated VIN, make, model, plate, and owner (location).
+ * @return A [Car] object with randomly generated VIN, make, model, plate, owner (location), and name.
  * @author Mulasa Rojesh Arun kumar
  */
 fun generateRandomCar(): Car {
-    // Predefined lists of car makes, models, and cities for random selection.
+    // Predefined lists of car makes, models, cities, and names for random selection.
     val makes = listOf("Toyota", "Honda", "Ford", "BMW", "Hyundai", "Suzuki", "Kia", "Tesla")
     val models =
         listOf("Corolla", "Civic", "Mustang", "320i", "i20", "Swift", "Seltos", "Model 3")
@@ -345,6 +394,10 @@ fun generateRandomCar(): Car {
         "Vizag",
         "Nagoya"
     )
+    val names = listOf(
+        "Alice Smith", "Bob Johnson", "Charlie Brown", "Diana Prince", "Eva Green",
+        "Frank White", "Grace Hopper", "Harry Potter"
+    ) // New list of names
 
     // Characters allowed in a VIN.
     val vinChars = "ABCDEFGHJKLMNPRSTUVWXYZ0123456789"
@@ -357,8 +410,10 @@ fun generateRandomCar(): Car {
     val plate = generateRandomPlate()
     // Select a random city for the owner's location.
     val location = cities.random()
-    // Return a new Car object with the generated data.
-    return Car(vin, make, model, plate, location)
+    // Select a random name.
+    val name = names.random() // Select a random name
+    // Return a new Car object with the generated data, including the new name.
+    return Car(vin, make, model, plate, location, name)
 }
 
 /**
@@ -388,6 +443,7 @@ fun generateRandomPlate(): String {
  * @property model The model of the car.
  * @property plate The license plate number of the car.
  * @property owner The name or location associated with the car's owner.
+ * @property name The name of the person associated with the car. // NEW property
  * @author Mulasa Rojesh Arun kumar
  */
 data class Car(
@@ -396,4 +452,5 @@ data class Car(
     val model: String,
     val plate: String,
     val owner: String,
+    val name: String, // NEW: Added name property
 )
