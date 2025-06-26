@@ -235,7 +235,7 @@ fun HomeScreenUI(navController: NavController) {
                             )
                             FleetInfoCell(
                                 iconRes = android.R.drawable.ic_dialog_alert,
-                                label = "Alerts: 0",
+                                label = "Alerts: 5",
                                 tint = Color(0xFFDC3545),
                                 modifier = Modifier.weight(1f)
                             )

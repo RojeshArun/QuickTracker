@@ -30,7 +30,7 @@ fun readVehiclesFromRaw(context: Context): List<VehicleData> {
             // Split the line by comma to get individual data parts.
             val parts = line.split(",")
             // Check if the line has the expected number of parts (9).
-            if (parts.size == 9) { // Expecting 9 parts: name, gpsDeviceId, latitude, longitude, regNumber, make, model, vehicleType, timestamp
+            if (parts.size == 12) { // Expecting 12 parts: name, gpsDeviceId, latitude, longitude, regNumber, make, model, vehicleType, timestamp, speed, battery, alerts
                 try {
                     // Create a VehicleData object from the parsed parts.
                     VehicleData(
@@ -42,7 +42,10 @@ fun readVehiclesFromRaw(context: Context): List<VehicleData> {
                         make = parts[5].trim(), // Vehicle make.
                         model = parts[6].trim(), // Vehicle model.
                         vehicleType = parts[7].trim(), // Vehicle type.
-                        timestamp = parts[8].trim() // Timestamp of the data.
+                        timestamp = parts[8].trim(), // Timestamp of the data.
+                        speed = parts[9].trim().toDouble(),// Speed
+                        battery = parts[10].trim().toInt(),
+                        alerts= 1
                     )
                 } catch (e: Exception) {
                     // Catch any parsing errors (e.g., NumberFormatException for latitude/longitude).
